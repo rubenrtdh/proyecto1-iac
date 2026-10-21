@@ -2,9 +2,14 @@ variable "libvirt_pool_name" {
   default = "default"
 }
 
-variable "base_image" {
-  description = "Imagen base de las máquinas"
+variable "base_image_debian" {
+  description = "Imagen base de la máquina web"
   default     = "debian13-base.qcow2"
+}
+
+variable "base_image_ubuntu" {
+  description = "Imagen base de la máquina bd"
+  default     = "ubuntu2604-base.qcow2"
 }
 
 variable "memoria" {
