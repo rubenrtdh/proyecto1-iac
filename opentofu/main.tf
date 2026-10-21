@@ -1,16 +1,24 @@
 locals {
   maquinas = {
-    web = { ip_datos = "10.0.0.10" }
-    bd  = { ip_datos = "10.0.0.20" }
+    web = {
+      imagen   = var.base_image_debian
+      usuario  = "debian"
+      ip_datos = "10.0.0.10"
+    }
+    bd = {
+      imagen   = var.base_image_ubuntu
+      usuario  = "ubuntu"
+      ip_datos = "10.0.0.20"
+    }
   }
 }
 
-# Disco: clon ligero de la imagen base
+# Disco: clon ligero de la imagen base que le toca a cada máquina
 resource "libvirt_volume" "disco" {
   for_each         = local.maquinas
   name             = "${each.key}.qcow2"
   pool             = var.libvirt_pool_name
-  base_volume_name = var.base_image
+  base_volume_name = each.value.imagen
   base_volume_pool = var.libvirt_pool_name
   format           = "qcow2"
 }
@@ -22,6 +30,7 @@ resource "libvirt_cloudinit_disk" "cloudinit" {
   pool     = var.libvirt_pool_name
   user_data = templatefile("${path.module}/cloud-init/user-data.tftpl", {
     hostname = each.key
+    usuario  = each.value.usuario
     ssh_key  = trimspace(file(pathexpand(var.ssh_key_file)))
   })
   network_config = templatefile("${path.module}/cloud-init/network-config.tftpl", {
