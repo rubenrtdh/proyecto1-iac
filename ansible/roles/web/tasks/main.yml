@@ -1,0 +1,51 @@
+- name: Instalar Apache, PHP y lo que necesita la aplicación
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-mysql
+      - php-mbstring
+      - git
+      - mariadb-client
+    state: present
+
+- name: Descargar la aplicación (solo la primera vez)
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: main
+    update: false
+
+- name: Generar config.php con los datos de conexión
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ app_dir }}/config.php"
+    owner: root
+    group: www-data
+    mode: "0640"
+
+- name: Activar el módulo rewrite
+  ansible.builtin.command: a2enmod rewrite
+  args:
+    creates: /etc/apache2/mods-enabled/rewrite.load
+  notify: Reiniciar Apache
+
+- name: Crear el virtual host
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: /etc/apache2/sites-available/guestbook.conf
+    mode: "0644"
+  notify: Recargar Apache
+
+- name: Activar el virtual host
+  ansible.builtin.command: a2ensite guestbook.conf
+  args:
+    creates: /etc/apache2/sites-enabled/guestbook.conf
+  notify: Recargar Apache
+
+- name: Desactivar el sitio por defecto
+  ansible.builtin.command: a2dissite 000-default.conf
+  args:
+    removes: /etc/apache2/sites-enabled/000-default.conf
+  notify: Recargar Apache
