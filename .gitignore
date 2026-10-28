@@ -1,0 +1,13 @@
+# Lo genera OpenTofu: no se sube
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.terraform.lock.hcl
+
+# Inventario generado por OpenTofu
+ansible/hosts
+
+# Imágenes de disco
+*.qcow2
+*.iso
+*.img
