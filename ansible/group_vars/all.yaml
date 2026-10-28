@@ -1,0 +1,14 @@
+# Paquetes comunes a todas las máquinas
+paquetes_comunes:
+  - vim
+  - curl
+  - htop
+
+# Datos de la base de datos de la aplicación
+db_name: guestbook
+db_user: guestbook_user
+db_password: Guestbook2026
+
+# IP de cada máquina en la red de datos
+ip_datos_web: 10.0.0.10
+ip_datos_bd: 10.0.0.20

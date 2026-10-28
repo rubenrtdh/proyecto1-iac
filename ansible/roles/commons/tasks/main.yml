@@ -1,0 +1,16 @@
+- name: Esperar a que cloud-init termine el primer arranque
+  ansible.builtin.command: cloud-init status --wait
+  register: cloudinit
+  changed_when: false
+  failed_when: cloudinit.rc not in [0, 2]
+
+- name: Actualizar la caché de paquetes y el sistema
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: dist
+
+- name: Instalar los paquetes comunes
+  ansible.builtin.apt:
+    name: "{{ paquetes_comunes }}"
+    state: present

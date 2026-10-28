@@ -1,0 +1,3 @@
+dominio: www.ruben.org
+app_repo: https://github.com/josedom24/guestbook_php.git
+app_dir: /var/www/guestbook
