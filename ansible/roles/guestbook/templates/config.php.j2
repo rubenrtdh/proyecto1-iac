@@ -1,0 +1,12 @@
+<?php
+// Fichero generado por Ansible (roles/guestbook/templates/config.php.j2)
+// Cliente: {{ item.nombre }}
+return [
+    'db' => [
+        'host' => '{{ ip_datos_bd }}',
+        'name' => '{{ item.nombre }}',
+        'user' => '{{ item.nombre }}_user',
+        'pass' => '{{ vault_secretos[item.nombre].db_password }}',
+        'charset' => 'utf8mb4',
+    ],
+];

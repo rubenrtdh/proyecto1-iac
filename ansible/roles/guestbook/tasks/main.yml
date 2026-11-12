@@ -1,0 +1,20 @@
+- name: Descargar el guestbook para cada cliente (solo la primera vez)
+  ansible.builtin.git:
+    repo: "{{ guestbook_repo }}"
+    dest: "{{ hosting_dir }}/{{ item.nombre }}"
+    version: main
+    update: false
+  loop: "{{ clientes_guestbook }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Generar el config.php de cada cliente con sus datos de conexión
+  ansible.builtin.template:
+    src: config.php.j2
+    dest: "{{ hosting_dir }}/{{ item.nombre }}/config.php"
+    owner: root
+    group: www-data
+    mode: "0640"
+  loop: "{{ clientes_guestbook }}"
+  loop_control:
+    label: "{{ item.nombre }}"
