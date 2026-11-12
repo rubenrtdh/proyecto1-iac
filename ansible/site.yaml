@@ -1,4 +1,34 @@
 ---
+- name: Validar la lista de clientes del hosting
+  hosts: all
+  gather_facts: false
+  any_errors_fatal: true
+  tasks:
+    - name: Nombres y dominios de cliente sin repetir
+      ansible.builtin.assert:
+        that:
+          - clientes | map(attribute='nombre') | unique | length == clientes | length
+          - clientes | map(attribute='dominio') | unique | length == clientes | length
+        fail_msg: "Hay nombres o dominios de cliente repetidos en clientes.yaml"
+        quiet: true
+      run_once: true
+
+    - name: Datos correctos en cada cliente
+      ansible.builtin.assert:
+        that:
+          - item.nombre is match('^[a-z][a-z0-9]{1,15}$')
+          - item.dominio is match('^[a-z0-9.-]+$')
+          - item.aplicacion in aplicaciones_validas
+          - item.plan in planes
+          - item.estado in ['alta', 'baja']
+          - item.estado == 'baja' or item.nombre in vault_secretos
+        fail_msg: "El cliente '{{ item.nombre }}' tiene datos incorrectos o le falta su contraseña en vault.yaml"
+        quiet: true
+      loop: "{{ clientes }}"
+      loop_control:
+        label: "{{ item.nombre }}"
+      run_once: true
+
 - name: Configuración común
   hosts: all
   become: true
@@ -16,3 +46,5 @@
   become: true
   roles:
     - web
+    - guestbook
+    - wordpress
