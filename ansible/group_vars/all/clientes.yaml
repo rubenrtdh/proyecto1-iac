@@ -1,0 +1,24 @@
+# Clientes del hosting.
+# Para dar de alta un cliente: añade un elemento y ejecuta el playbook.
+# Para darlo de baja: cambia su estado a "baja" y ejecuta el playbook.
+# Su contraseña de la base de datos va en vault.yaml (cifrado).
+#
+#   nombre:     minúsculas y números, empieza por letra (máx. 16). Se usa para
+#               la base de datos, el usuario y el directorio del cliente.
+#   dominio:    nombre de su web.
+#   aplicacion: guestbook | wordpress
+#   plan:       basico | premium
+#   estado:     alta | baja
+
+clientes:
+  - nombre: libro
+    dominio: www.ruben.org
+    aplicacion: guestbook
+    plan: basico
+    estado: alta
+
+  - nombre: blog
+    dominio: blog.ruben.org
+    aplicacion: wordpress
+    plan: premium
+    estado: alta

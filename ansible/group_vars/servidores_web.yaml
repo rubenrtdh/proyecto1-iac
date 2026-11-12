@@ -1,3 +1,26 @@
-dominio: www.ruben.org
-app_repo: https://github.com/josedom24/guestbook_php.git
-app_dir: /var/www/guestbook
+# Paquetes del servidor web
+paquetes_web:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - php-mbstring
+  - git
+  - mariadb-client
+
+# Directorios del hosting
+hosting_dir: /var/www/clientes       # aquí va un directorio por cliente
+hosting_pagina_dir: /var/www/hosting # página por defecto del hosting
+
+# Aplicación guestbook
+guestbook_repo: https://github.com/josedom24/guestbook_php.git
+
+# Aplicación WordPress
+wordpress_url: https://es.wordpress.org/latest-es_ES.tar.gz
+wordpress_paquete: /var/cache/wordpress-es_ES.tar.gz
+wordpress_extensiones_php:
+  - php-xml
+  - php-curl
+  - php-gd
+  - php-intl
+  - php-zip

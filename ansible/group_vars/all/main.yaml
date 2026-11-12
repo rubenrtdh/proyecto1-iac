@@ -1,0 +1,30 @@
+# Paquetes comunes a todas las máquinas
+paquetes_comunes:
+  - vim
+  - curl
+  - htop
+
+# IP de cada máquina en la red de datos
+ip_datos_web: 10.0.0.10
+ip_datos_bd: 10.0.0.20
+
+# Datos del hosting
+hosting_nombre: Hosting Rubén
+hosting_dominio: hosting.ruben.org
+
+# Lo que ofrece el hosting (la lista de clientes se valida contra esto)
+aplicaciones_validas:
+  - guestbook
+  - wordpress
+
+planes:
+  basico:
+    descripcion: Plan básico
+  premium:
+    descripcion: Plan premium
+
+# Listas calculadas a partir de clientes.yaml (no hay que tocarlas)
+clientes_alta: "{{ clientes | selectattr('estado', 'equalto', 'alta') | list }}"
+clientes_baja: "{{ clientes | selectattr('estado', 'equalto', 'baja') | list }}"
+clientes_guestbook: "{{ clientes_alta | selectattr('aplicacion', 'equalto', 'guestbook') | list }}"
+clientes_wordpress: "{{ clientes_alta | selectattr('aplicacion', 'equalto', 'wordpress') | list }}"
