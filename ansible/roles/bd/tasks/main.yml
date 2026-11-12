@@ -18,39 +18,77 @@
     state: started
     enabled: true
 
-- name: Crear la base de datos
+# ---------- Alta de clientes ----------
+
+- name: Crear la base de datos de cada cliente
   community.mysql.mysql_db:
-    name: "{{ db_name }}"
+    name: "{{ item.nombre }}"
     state: present
     login_unix_socket: "{{ mysql_socket }}"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }}"
 
-- name: Crear el usuario, que solo puede conectarse desde web por la red de datos
+- name: Crear el usuario de cada cliente (solo su base de datos y solo desde web)
   community.mysql.mysql_user:
-    name: "{{ db_user }}"
-    password: "{{ db_password }}"
+    name: "{{ item.nombre }}_user"
+    password: "{{ vault_secretos[item.nombre].db_password }}"
     host: "{{ ip_datos_web }}"
-    priv: "{{ db_name }}.*:ALL"
+    priv: "{{ item.nombre }}.*:ALL"
     state: present
     login_unix_socket: "{{ mysql_socket }}"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }}_user@{{ ip_datos_web }}"
 
-- name: Descargar schema.sql de la aplicación
+# ---------- Tablas de los clientes con guestbook ----------
+
+- name: Descargar schema.sql del guestbook
   ansible.builtin.get_url:
     url: "{{ schema_url }}"
     dest: "{{ schema_dest }}"
     mode: "0644"
+  when: clientes_guestbook | length > 0
 
-- name: Comprobar si la tabla messages ya existe
+- name: Comprobar si la tabla messages ya existe en cada guestbook
   community.mysql.mysql_query:
-    login_db: "{{ db_name }}"
+    login_db: "{{ item.nombre }}"
     query: "SHOW TABLES LIKE 'messages'"
     login_unix_socket: "{{ mysql_socket }}"
-  register: tabla
+  loop: "{{ clientes_guestbook }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+  register: tablas
   changed_when: false
 
-- name: Crear las tablas (solo si todavía no existen)
+- name: Crear las tablas del guestbook (solo si todavía no existen)
   community.mysql.mysql_db:
-    name: "{{ db_name }}"
+    name: "{{ item.item.nombre }}"
     state: import
     target: "{{ schema_dest }}"
     login_unix_socket: "{{ mysql_socket }}"
-  when: tabla.rowcount[0] == 0
+  loop: "{{ tablas.results }}"
+  loop_control:
+    label: "{{ item.item.nombre }}"
+  when: item.rowcount[0] == 0
+
+# ---------- Baja de clientes ----------
+
+- name: Borrar el usuario de los clientes de baja
+  community.mysql.mysql_user:
+    name: "{{ item.nombre }}_user"
+    host: "{{ ip_datos_web }}"
+    state: absent
+    login_unix_socket: "{{ mysql_socket }}"
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}_user@{{ ip_datos_web }}"
+
+- name: Borrar la base de datos de los clientes de baja
+  community.mysql.mysql_db:
+    name: "{{ item.nombre }}"
+    state: absent
+    login_unix_socket: "{{ mysql_socket }}"
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"
