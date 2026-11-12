@@ -1,0 +1,14 @@
+# Fichero generado por Ansible (roles/web/templates/hosting.conf.j2)
+# Virtual host por defecto: como es el primero (000-), responde a cualquier
+# dominio que no sea de un cliente dado de alta.
+<VirtualHost *:80>
+    ServerName {{ hosting_dominio }}
+    DocumentRoot {{ hosting_pagina_dir }}
+
+    <Directory {{ hosting_pagina_dir }}>
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/hosting_error.log
+    CustomLog ${APACHE_LOG_DIR}/hosting_access.log combined
+</VirtualHost>

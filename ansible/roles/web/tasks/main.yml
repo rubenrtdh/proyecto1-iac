@@ -1,29 +1,7 @@
-- name: Instalar Apache, PHP y lo que necesita la aplicación
+- name: Instalar Apache y PHP
   ansible.builtin.apt:
-    name:
-      - apache2
-      - php
-      - libapache2-mod-php
-      - php-mysql
-      - php-mbstring
-      - git
-      - mariadb-client
+    name: "{{ paquetes_web }}"
     state: present
-
-- name: Descargar la aplicación (solo la primera vez)
-  ansible.builtin.git:
-    repo: "{{ app_repo }}"
-    dest: "{{ app_dir }}"
-    version: main
-    update: false
-
-- name: Generar config.php con los datos de conexión
-  ansible.builtin.template:
-    src: config.php.j2
-    dest: "{{ app_dir }}/config.php"
-    owner: root
-    group: www-data
-    mode: "0640"
 
 - name: Activar el módulo rewrite
   ansible.builtin.command: a2enmod rewrite
@@ -31,21 +9,98 @@
     creates: /etc/apache2/mods-enabled/rewrite.load
   notify: Reiniciar Apache
 
-- name: Crear el virtual host
+# ---------- Página por defecto del hosting ----------
+
+- name: Crear el directorio de la página del hosting
+  ansible.builtin.file:
+    path: "{{ hosting_pagina_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Generar la página del hosting con la lista de clientes activos
   ansible.builtin.template:
-    src: vhost.conf.j2
-    dest: /etc/apache2/sites-available/guestbook.conf
+    src: hosting.html.j2
+    dest: "{{ hosting_pagina_dir }}/index.html"
+    mode: "0644"
+
+- name: Crear el virtual host por defecto del hosting
+  ansible.builtin.template:
+    src: hosting.conf.j2
+    dest: /etc/apache2/sites-available/000-hosting.conf
     mode: "0644"
   notify: Recargar Apache
 
-- name: Activar el virtual host
-  ansible.builtin.command: a2ensite guestbook.conf
+- name: Activar el virtual host por defecto del hosting
+  ansible.builtin.command: a2ensite 000-hosting.conf
   args:
-    creates: /etc/apache2/sites-enabled/guestbook.conf
+    creates: /etc/apache2/sites-enabled/000-hosting.conf
   notify: Recargar Apache
 
-- name: Desactivar el sitio por defecto
+- name: Desactivar el sitio por defecto de Apache
   ansible.builtin.command: a2dissite 000-default.conf
   args:
     removes: /etc/apache2/sites-enabled/000-default.conf
   notify: Recargar Apache
+
+# ---------- Alta de clientes ----------
+
+- name: Crear el directorio de cada cliente
+  ansible.builtin.file:
+    path: "{{ hosting_dir }}/{{ item.nombre }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Crear el virtual host de cada cliente
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: "/etc/apache2/sites-available/{{ item.nombre }}.conf"
+    mode: "0644"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.dominio }}"
+  notify: Recargar Apache
+
+- name: Activar el virtual host de cada cliente
+  ansible.builtin.command: "a2ensite {{ item.nombre }}.conf"
+  args:
+    creates: "/etc/apache2/sites-enabled/{{ item.nombre }}.conf"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.dominio }}"
+  notify: Recargar Apache
+
+# ---------- Baja de clientes ----------
+
+- name: Desactivar el virtual host de los clientes de baja
+  ansible.builtin.command: "a2dissite {{ item.nombre }}.conf"
+  args:
+    removes: "/etc/apache2/sites-enabled/{{ item.nombre }}.conf"
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.dominio }}"
+  notify: Recargar Apache
+
+- name: Borrar el virtual host de los clientes de baja
+  ansible.builtin.file:
+    path: "/etc/apache2/sites-available/{{ item.nombre }}.conf"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.dominio }}"
+
+- name: Borrar los ficheros de los clientes de baja
+  ansible.builtin.file:
+    path: "{{ hosting_dir }}/{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Apache arrancado y activo al inicio
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: true

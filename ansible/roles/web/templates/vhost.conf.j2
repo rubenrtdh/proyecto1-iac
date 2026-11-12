@@ -1,12 +1,14 @@
+# Fichero generado por Ansible (roles/web/templates/vhost.conf.j2)
+# Cliente: {{ item.nombre }} | Aplicación: {{ item.aplicacion }} | Plan: {{ item.plan }}
 <VirtualHost *:80>
-    ServerName {{ dominio }}
-    DocumentRoot {{ app_dir }}
+    ServerName {{ item.dominio }}
+    DocumentRoot {{ hosting_dir }}/{{ item.nombre }}
 
-    <Directory {{ app_dir }}>
+    <Directory {{ hosting_dir }}/{{ item.nombre }}>
         AllowOverride All
         Require all granted
     </Directory>
 
-    ErrorLog ${APACHE_LOG_DIR}/guestbook_error.log
-    CustomLog ${APACHE_LOG_DIR}/guestbook_access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/{{ item.nombre }}_error.log
+    CustomLog ${APACHE_LOG_DIR}/{{ item.nombre }}_access.log combined
 </VirtualHost>

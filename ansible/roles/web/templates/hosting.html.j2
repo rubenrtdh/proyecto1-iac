@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Fichero generado por Ansible (roles/web/templates/hosting.html.j2) -->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ hosting_nombre }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; color: #222; margin: 0; }
+    main { max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 4px; }
+    .aviso { background: #fff3cd; border: 1px solid #e0c36a; padding: 12px 16px; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 16px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ddd; }
+    th { background: #2d3e50; color: #fff; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>{{ hosting_nombre }}</h1>
+  <p class="aviso">El dominio <strong id="dominio"></strong> no está alojado en {{ hosting_nombre }}.</p>
+
+  <h2>Clientes activos</h2>
+  <table>
+    <tr><th>Dominio</th><th>Aplicación</th><th>Plan</th></tr>
+{% for c in clientes_alta %}
+    <tr>
+      <td><a href="http://{{ c.dominio }}">{{ c.dominio }}</a></td>
+      <td>{{ c.aplicacion }}</td>
+      <td>{{ planes[c.plan].descripcion }}</td>
+    </tr>
+{% endfor %}
+  </table>
+</main>
+<script>
+  // Si se entra por el dominio del hosting no se muestra el aviso
+  if (location.hostname === '{{ hosting_dominio }}') {
+    document.querySelector('.aviso').remove();
+  } else {
+    document.getElementById('dominio').textContent = location.hostname;
+  }
+</script>
+</body>
+</html>
