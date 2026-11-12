@@ -11,3 +11,4 @@ ansible/hosts
 *.qcow2
 *.iso
 *.img
+ansible/.vault_pass
