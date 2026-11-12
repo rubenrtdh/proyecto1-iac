@@ -1,0 +1,38 @@
+- name: Instalar las extensiones de PHP que necesita WordPress
+  ansible.builtin.apt:
+    name: "{{ wordpress_extensiones_php }}"
+    state: present
+  when: clientes_wordpress | length > 0
+  notify: Reiniciar Apache
+
+- name: Descargar WordPress una sola vez para todos los clientes
+  ansible.builtin.get_url:
+    url: "{{ wordpress_url }}"
+    dest: "{{ wordpress_paquete }}"
+    mode: "0644"
+  when: clientes_wordpress | length > 0
+
+- name: Descomprimir WordPress en el directorio de cada cliente (solo la primera vez)
+  ansible.builtin.unarchive:
+    src: "{{ wordpress_paquete }}"
+    dest: "{{ hosting_dir }}/{{ item.nombre }}"
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+    creates: "{{ hosting_dir }}/{{ item.nombre }}/wp-settings.php"
+    owner: www-data
+    group: www-data
+  loop: "{{ clientes_wordpress }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Generar el wp-config.php de cada cliente
+  ansible.builtin.template:
+    src: wp-config.php.j2
+    dest: "{{ hosting_dir }}/{{ item.nombre }}/wp-config.php"
+    owner: www-data
+    group: www-data
+    mode: "0640"
+  loop: "{{ clientes_wordpress }}"
+  loop_control:
+    label: "{{ item.nombre }}"

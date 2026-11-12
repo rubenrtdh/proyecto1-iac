@@ -1,0 +1,27 @@
+<?php
+// Fichero generado por Ansible (roles/wordpress/templates/wp-config.php.j2)
+// Cliente: {{ item.nombre }}
+
+// Conexión a la base de datos del cliente
+define( 'DB_NAME', '{{ item.nombre }}' );
+define( 'DB_USER', '{{ item.nombre }}_user' );
+define( 'DB_PASSWORD', '{{ vault_secretos[item.nombre].db_password }}' );
+define( 'DB_HOST', '{{ ip_datos_bd }}' );
+define( 'DB_CHARSET', 'utf8mb4' );
+define( 'DB_COLLATE', '' );
+
+// Claves secretas: distintas para cada cliente y calculadas a partir de la
+// semilla guardada en el vault, así no cambian entre ejecuciones.
+{% for clave in ['AUTH_KEY', 'SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'NONCE_KEY', 'AUTH_SALT', 'SECURE_AUTH_SALT', 'LOGGED_IN_SALT', 'NONCE_SALT'] %}
+define( '{{ clave }}', '{{ (vault_wp_semilla ~ item.nombre ~ clave) | hash('sha256') }}' );
+{% endfor %}
+
+$table_prefix = 'wp_';
+
+define( 'WP_DEBUG', false );
+
+if ( ! defined( 'ABSPATH' ) ) {
+    define( 'ABSPATH', __DIR__ . '/' );
+}
+
+require_once ABSPATH . 'wp-settings.php';
