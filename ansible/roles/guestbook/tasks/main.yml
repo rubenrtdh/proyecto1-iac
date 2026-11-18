@@ -1,9 +1,16 @@
-- name: Descargar el guestbook para cada cliente (solo la primera vez)
+# Se ejecuta en el NAS: la aplicación se despliega una sola vez en el espacio
+# del cliente, y web la sirve desde el montaje NFS.
+
+# Se descarga con el usuario del cliente: así los ficheros son suyos desde el
+# principio, y Git no protesta porque el directorio sea de otro usuario.
+- name: Descargar el guestbook en el espacio de cada cliente (solo la primera vez)
   ansible.builtin.git:
     repo: "{{ guestbook_repo }}"
-    dest: "{{ hosting_dir }}/{{ item.nombre }}"
+    dest: "{{ nas_export_dir }}/{{ item.nombre }}"
     version: main
     update: false
+    umask: "0027"
+  become_user: "{{ item.nombre }}"
   loop: "{{ clientes_guestbook }}"
   loop_control:
     label: "{{ item.nombre }}"
@@ -11,8 +18,8 @@
 - name: Generar el config.php de cada cliente con sus datos de conexión
   ansible.builtin.template:
     src: config.php.j2
-    dest: "{{ hosting_dir }}/{{ item.nombre }}/config.php"
-    owner: root
+    dest: "{{ nas_export_dir }}/{{ item.nombre }}/config.php"
+    owner: "{{ item.nombre }}"
     group: www-data
     mode: "0640"
   loop: "{{ clientes_guestbook }}"
