@@ -1,0 +1,60 @@
+# acl: lo necesita Ansible para ejecutar tareas como el usuario del cliente
+- name: Instalar el servidor NFS y lo necesario para desplegar las aplicaciones
+  ansible.builtin.apt:
+    name:
+      - nfs-kernel-server
+      - git
+      - acl
+    state: present
+
+- name: Crear la carpeta de los clientes
+  ansible.builtin.file:
+    path: "{{ nas_export_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# ---------- Alta de clientes ----------
+
+# Dueño: el cliente. Grupo: www-data (Apache lo puede leer). Otros: nada.
+# El 2 (setgid) hace que lo que se cree dentro herede el grupo www-data.
+- name: Crear el espacio de cada cliente
+  ansible.builtin.file:
+    path: "{{ nas_export_dir }}/{{ item.nombre }}"
+    state: directory
+    owner: "{{ item.nombre }}"
+    group: www-data
+    mode: "2750"
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Crear el directorio de las exportaciones
+  ansible.builtin.file:
+    path: /etc/exports.d
+    state: directory
+    mode: "0755"
+
+- name: Exportar el espacio de cada cliente solo al servidor web
+  ansible.builtin.template:
+    src: clientes.exports.j2
+    dest: /etc/exports.d/clientes.exports
+    mode: "0644"
+  notify: Recargar las exportaciones NFS
+
+- name: Servidor NFS arrancado y activo al inicio
+  ansible.builtin.service:
+    name: nfs-server
+    state: started
+    enabled: true
+
+# ---------- Baja de clientes ----------
+
+- name: Borrar el espacio de los clientes de baja
+  ansible.builtin.file:
+    path: "{{ nas_export_dir }}/{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"

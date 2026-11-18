@@ -1,0 +1,5 @@
+# Fichero generado por Ansible (roles/nas/templates/clientes.exports.j2)
+# Un espacio por cliente de alta, que solo puede montar el servidor web.
+{% for c in clientes_alta %}
+{{ nas_export_dir }}/{{ c.nombre }} {{ ip_datos_web }}({{ nfs_export_opciones }})
+{% endfor %}
