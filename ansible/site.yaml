@@ -4,12 +4,13 @@
   gather_facts: false
   any_errors_fatal: true
   tasks:
-    - name: Nombres y dominios de cliente sin repetir
+    - name: Nombres, UID y dominios de cliente sin repetir
       ansible.builtin.assert:
         that:
           - clientes | map(attribute='nombre') | unique | length == clientes | length
+          - clientes | map(attribute='uid') | unique | length == clientes | length
           - clientes | map(attribute='dominio') | unique | length == clientes | length
-        fail_msg: "Hay nombres o dominios de cliente repetidos en clientes.yaml"
+        fail_msg: "Hay nombres, UID o dominios de cliente repetidos en clientes.yaml"
         quiet: true
       run_once: true
 
@@ -17,6 +18,7 @@
       ansible.builtin.assert:
         that:
           - item.nombre is match('^[a-z][a-z0-9]{1,15}$')
+          - item.uid is integer and item.uid >= 2000 and item.uid <= 2999
           - item.dominio is match('^[a-z0-9.-]+$')
           - item.aplicacion in aplicaciones_validas
           - item.plan in planes
@@ -41,10 +43,31 @@
   roles:
     - bd
 
+# Una baja se hace en orden: primero web deja de usar el espacio del cliente
+# (lo desmonta) y después el NAS lo borra. Si se borrara antes, web se quedaría
+# con un montaje roto.
+- name: Desmontar en web el espacio de los clientes de baja
+  hosts: servidores_web
+  become: true
+  tasks:
+    - name: Desmontar el espacio de los clientes de baja
+      ansible.builtin.include_role:
+        name: nfs_cliente
+        tasks_from: baja
+
+- name: Servidor NAS
+  hosts: servidores_nas
+  become: true
+  roles:
+    - usuarios_clientes
+    - nas
+    - guestbook
+    - wordpress
+
 - name: Servidor web
   hosts: servidores_web
   become: true
   roles:
+    - usuarios_clientes
+    - nfs_cliente
     - web
-    - guestbook
-    - wordpress
