@@ -43,15 +43,8 @@
   notify: Recargar Apache
 
 # ---------- Alta de clientes ----------
-
-- name: Crear el directorio de cada cliente
-  ansible.builtin.file:
-    path: "{{ hosting_dir }}/{{ item.nombre }}"
-    state: directory
-    mode: "0755"
-  loop: "{{ clientes_alta }}"
-  loop_control:
-    label: "{{ item.nombre }}"
+# El directorio de cada cliente ya no se crea aquí: es el montaje NFS de su
+# espacio en el NAS (rol nfs_cliente).
 
 - name: Crear el virtual host de cada cliente
   ansible.builtin.template:
@@ -90,14 +83,6 @@
   loop: "{{ clientes_baja }}"
   loop_control:
     label: "{{ item.dominio }}"
-
-- name: Borrar los ficheros de los clientes de baja
-  ansible.builtin.file:
-    path: "{{ hosting_dir }}/{{ item.nombre }}"
-    state: absent
-  loop: "{{ clientes_baja }}"
-  loop_control:
-    label: "{{ item.nombre }}"
 
 - name: Apache arrancado y activo al inicio
   ansible.builtin.service:

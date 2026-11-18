@@ -1,0 +1,9 @@
+# Se ejecuta antes de que el NAS borre el espacio del cliente (ver site.yaml).
+# state: absent desmonta, lo quita de /etc/fstab y borra el punto de montaje.
+- name: Desmontar el espacio de los clientes de baja
+  ansible.posix.mount:
+    path: "{{ hosting_dir }}/{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"

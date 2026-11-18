@@ -1,0 +1,15 @@
+- name: Instalar el cliente NFS
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+
+- name: Montar desde el NAS el espacio de cada cliente en su DocumentRoot
+  ansible.posix.mount:
+    src: "{{ ip_datos_nas }}:{{ nas_export_dir }}/{{ item.nombre }}"
+    path: "{{ hosting_dir }}/{{ item.nombre }}"
+    fstype: nfs
+    opts: "{{ nfs_opciones }}"
+    state: mounted
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }}"
