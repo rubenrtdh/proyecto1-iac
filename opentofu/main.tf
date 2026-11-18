@@ -6,14 +6,20 @@ locals {
       ip_datos = "10.0.0.10"
     }
     bd = {
-      imagen   = var.base_image_ubuntu   # para Debian: var.base_image_debian
-      usuario  = "ubuntu"                # para Debian: "debian"
+      imagen   = var.base_image_ubuntu
+      usuario  = "ubuntu"
       ip_datos = "10.0.0.20"
+    }
+    # Servidor NAS: guarda por NFS los ficheros de los clientes del hosting
+    nas = {
+      imagen   = var.base_image_debian
+      usuario  = "debian"
+      ip_datos = "10.0.0.30"
     }
   }
 }
 
-# Disco: clon ligero (solo guarda los cambios respecto a la imagen base)
+# Disco: clon ligero de la imagen base que le toca a cada máquina
 resource "libvirt_volume" "disco" {
   for_each         = local.maquinas
   name             = "${each.key}.qcow2"
@@ -45,13 +51,11 @@ resource "libvirt_domain" "maquina" {
   memory   = var.memoria
   vcpu     = 1
 
-  # Primera interfaz (ens3): red NAT con DHCP
   network_interface {
     network_id     = libvirt_network.p1-nat.id
-    wait_for_lease = true   # espera a que el DHCP le dé IP
+    wait_for_lease = true
   }
 
-  # Segunda interfaz (ens4): red de datos, IP fija (sin wait_for_lease)
   network_interface {
     network_id = libvirt_network.p1-datos.id
   }
@@ -62,7 +66,6 @@ resource "libvirt_domain" "maquina" {
 
   cloudinit = libvirt_cloudinit_disk.cloudinit[each.key].id
 
-  # Consola serie: la necesitan las imágenes cloud
   console {
     type        = "pty"
     target_port = "0"

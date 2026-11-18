@@ -4,7 +4,7 @@ variable "libvirt_pool_name" {
 }
 
 variable "base_image_debian" {
-  description = "Imagen base de la máquina web"
+  description = "Imagen base de las máquinas web y nas"
   default     = "debian13-base.qcow2"
 }
 

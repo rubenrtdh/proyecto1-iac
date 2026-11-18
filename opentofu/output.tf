@@ -13,3 +13,11 @@ output "bd" {
     ip_datos = local.maquinas.bd.ip_datos
   }
 }
+
+output "nas" {
+  value = {
+    sistema  = "Debian 13"
+    ip_nat   = try(libvirt_domain.maquina["nas"].network_interface[0].addresses[0], "No disponible")
+    ip_datos = local.maquinas.nas.ip_datos
+  }
+}
