@@ -5,6 +5,8 @@
 #
 #   nombre:     minúsculas y números, empieza por letra (máx. 16). Se usa para
 #               la base de datos, el usuario y el directorio del cliente.
+#   uid:        número del usuario del sistema del cliente (2000-2999). Tiene que
+#               ser el mismo en todas las máquinas y no se reutiliza nunca.
 #   dominio:    nombre de su web.
 #   aplicacion: guestbook | wordpress
 #   plan:       basico | premium
@@ -12,12 +14,14 @@
 
 clientes:
   - nombre: libro
+    uid: 2001
     dominio: www.ruben.org
     aplicacion: guestbook
     plan: basico
     estado: alta
 
   - nombre: blog
+    uid: 2002
     dominio: blog.ruben.org
     aplicacion: wordpress
     plan: premium

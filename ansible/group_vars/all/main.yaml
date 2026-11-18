@@ -7,6 +7,10 @@ paquetes_comunes:
 # IP de cada máquina en la red de datos
 ip_datos_web: 10.0.0.10
 ip_datos_bd: 10.0.0.20
+ip_datos_nas: 10.0.0.30
+
+# NAS: carpeta donde se guarda un directorio por cliente (se exporta por NFS)
+nas_export_dir: /srv/nfs/clientes
 
 # Datos del hosting
 hosting_nombre: Hosting Rubén

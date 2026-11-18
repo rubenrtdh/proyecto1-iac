@@ -1,0 +1,9 @@
+# Opciones de cada exportación NFS
+nfs_export_opciones: rw,sync,no_subtree_check,root_squash
+
+# Aplicación guestbook (se despliega en el NAS)
+guestbook_repo: https://github.com/josedom24/guestbook_php.git
+
+# Aplicación WordPress (se descarga una vez en el NAS)
+wordpress_url: https://es.wordpress.org/latest-es_ES.tar.gz
+wordpress_paquete: /var/cache/wordpress-es_ES.tar.gz
