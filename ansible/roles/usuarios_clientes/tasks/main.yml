@@ -1,0 +1,41 @@
+# Cada cliente tiene un usuario y un grupo del sistema con el mismo UID y GID en
+# todas las máquinas: NFS identifica a los dueños de los ficheros por número,
+# no por nombre.
+
+- name: Crear el grupo de cada cliente
+  ansible.builtin.group:
+    name: "{{ item.nombre }}"
+    gid: "{{ item.uid }}"
+    state: present
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }} ({{ item.uid }})"
+
+- name: Crear el usuario de cada cliente (sin shell ni directorio personal)
+  ansible.builtin.user:
+    name: "{{ item.nombre }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.nombre }}"
+    comment: "Cliente del hosting - {{ item.dominio }}"
+    shell: /usr/sbin/nologin
+    create_home: false
+    state: present
+  loop: "{{ clientes_alta }}"
+  loop_control:
+    label: "{{ item.nombre }} ({{ item.uid }})"
+
+- name: Borrar el usuario de los clientes de baja
+  ansible.builtin.user:
+    name: "{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
+- name: Borrar el grupo de los clientes de baja
+  ansible.builtin.group:
+    name: "{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"
