@@ -12,29 +12,34 @@ Aplicaciones que ofrece el hosting:
 ## Escenario
 
 ```
-                    Equipo anfitrión
-                           │
-      ┌──── red p1-nat (NAT + DHCP) 192.168.120.0/24 ────┐
-      │                                                  │
- web (Debian 13)                                  bd (Ubuntu 26.04)
- Apache + PHP                                     MariaDB
- un virtual host por cliente                      una BD y un usuario por cliente
- ens3: DHCP · ens4: 10.0.0.10                     ens3: DHCP · ens4: 10.0.0.20
-      │                                                  │
-      └──── red p1-datos (muy aislada) 10.0.0.0/24 ──────┘
+                         Equipo anfitrión
+                                │
+         ┌──── red p1-nat (NAT + DHCP) 192.168.120.0/24 ────┐
+         │                      │                           │
+  web (Debian 13)        bd (Ubuntu 26.04)            nas (Debian 13)
+  Apache + PHP           MariaDB                      Servidor NFS
+  un vhost por cliente   una BD y un usuario          un espacio por cliente
+  monta por NFS el       por cliente                  (con un usuario del
+  espacio de cada                                     sistema por cliente)
+  cliente
+  ens4: 10.0.0.10        ens4: 10.0.0.20              ens4: 10.0.0.30
+         │                      │                           │
+         └──── red p1-datos (muy aislada) 10.0.0.0/24 ──────┘
 ```
 
 - **p1-nat**: acceso desde el anfitrión y salida a internet.
-- **p1-datos**: red muy aislada con IP estáticas por la que se comunican web y bd.
+- **p1-datos**: red muy aislada con IP estáticas por la que se comunican las máquinas.
   MariaDB solo escucha en esta red, y el usuario de cada cliente solo tiene permisos
   sobre su base de datos y solo acepta conexiones desde web.
+- **nas**: guarda los ficheros de los clientes. Cada cliente tiene su directorio,
+  exportado por NFS solo a web, y web lo monta en el DocumentRoot de su vhost.
 
 ## Requisitos
 
 - KVM/libvirt y OpenTofu instalados.
-- Imágenes base en el pool `default`: `debian13-base.qcow2` y `ubuntu2604-base.qcow2`.
+- Imágenes base en el pool `default`: `debian13-base.qcow2` (web y nas) y `ubuntu2604-base.qcow2` (bd).
 - Una clave SSH en `~/.ssh/id_ed25519.pub` (se cambia en `opentofu/variables.tf`).
-- Ansible con la colección `community.mysql`:
+- Ansible con las colecciones `community.mysql` y `ansible.posix`:
 
   ```bash
   ansible-galaxy collection install -r ansible/requirements.yml
@@ -63,13 +68,19 @@ ansible-playbook site.yaml
 con sus IP. `ansible-playbook site.yaml` comprueba la lista de clientes y configura
 las máquinas con estos roles:
 
-| Rol         | Máquinas | Qué hace |
-|-------------|----------|----------|
-| `commons`   | todas    | Actualiza el sistema e instala paquetes comunes |
-| `bd`        | bd       | MariaDB en la red de datos; base de datos y usuario de cada cliente; tablas del guestbook; baja de clientes |
-| `web`       | web      | Apache + PHP; virtual host y directorio de cada cliente; página por defecto del hosting; baja de clientes |
-| `guestbook` | web      | Despliega el guestbook y genera su `config.php` para los clientes con esta aplicación |
-| `wordpress` | web      | Despliega WordPress y genera su `wp-config.php` para los clientes con esta aplicación |
+| Rol                 | Máquinas | Qué hace |
+|---------------------|----------|----------|
+| `commons`           | todas    | Actualiza el sistema e instala paquetes comunes |
+| `bd`                | bd       | MariaDB en la red de datos; base de datos y usuario de cada cliente; tablas del guestbook; baja de clientes |
+| `usuarios_clientes` | nas, web | Un usuario y un grupo del sistema por cliente, con el mismo UID en todas las máquinas |
+| `nas`               | nas      | Servidor NFS; un espacio por cliente (dueño el cliente, grupo `www-data`, `2750`) exportado solo a web; baja de clientes |
+| `guestbook`         | nas      | Despliega el guestbook en el espacio del cliente (con su usuario) y genera su `config.php` |
+| `wordpress`         | nas      | Despliega WordPress en el espacio del cliente y genera su `wp-config.php` |
+| `nfs_cliente`       | web      | Monta por NFS el espacio de cada cliente en su DocumentRoot; desmonta los de baja |
+| `web`               | web      | Apache + PHP; virtual host de cada cliente; página por defecto del hosting; baja de clientes |
+
+Al dar de baja a un cliente, primero web desmonta su espacio y después el NAS lo borra
+(por eso `site.yaml` tiene una jugada para desmontar antes de la del NAS).
 
 ## Clientes del hosting
 
@@ -78,6 +89,7 @@ Los clientes están en `ansible/group_vars/all/clientes.yaml`:
 ```yaml
 clientes:
   - nombre: blog              # base de datos, usuario y directorio
+    uid: 2002                 # usuario del sistema (2000-2999), no se reutiliza
     dominio: blog.ruben.org
     aplicacion: wordpress     # guestbook | wordpress
     plan: premium             # basico | premium
@@ -92,9 +104,9 @@ clientes:
   ```
 
 - **Dar de baja un cliente**: cambiar su `estado` a `baja` y ejecutar el playbook. Se
-  borran su virtual host, sus ficheros, su base de datos y su usuario.
+  borran su virtual host, su espacio en el NAS, su base de datos y sus usuarios.
 
-Al empezar, el playbook comprueba la lista (nombres y dominios sin repetir,
+Al empezar, el playbook comprueba la lista (nombres, UID y dominios sin repetir,
 aplicación y plan válidos, contraseña en el vault) y se para si hay algún error.
 
 Las contraseñas de los clientes y la semilla de las claves de WordPress están
