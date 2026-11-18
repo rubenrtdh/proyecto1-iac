@@ -1,6 +1,19 @@
 # Se ejecuta en el NAS: la aplicación se despliega una sola vez en el espacio
 # del cliente, y web la sirve desde el montaje NFS.
 
+# Los usuarios de los clientes no tienen carpeta personal, así que Ansible
+# necesita otra carpeta para sus ficheros temporales cuando trabaja como ellos.
+- name: Carpeta temporal de Ansible para cada cliente
+  ansible.builtin.file:
+    path: "{{ clientes_tmp_dir }}/{{ item.nombre }}"
+    state: directory
+    owner: "{{ item.nombre }}"
+    group: "{{ item.nombre }}"
+    mode: "0700"
+  loop: "{{ clientes_guestbook }}"
+  loop_control:
+    label: "{{ item.nombre }}"
+
 # Se descarga con el usuario del cliente: así los ficheros son suyos desde el
 # principio, y Git no protesta porque el directorio sea de otro usuario.
 - name: Descargar el guestbook en el espacio de cada cliente (solo la primera vez)
@@ -11,6 +24,8 @@
     update: false
     umask: "0027"
   become_user: "{{ item.nombre }}"
+  vars:
+    ansible_remote_tmp: "{{ clientes_tmp_dir }}/{{ item.nombre }}"
   loop: "{{ clientes_guestbook }}"
   loop_control:
     label: "{{ item.nombre }}"

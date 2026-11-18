@@ -1,3 +1,6 @@
+# Carpetas temporales de Ansible para trabajar como el usuario de cada cliente
+clientes_tmp_dir: /var/lib/ansible-clientes
+
 # Opciones de cada exportación NFS
 nfs_export_opciones: rw,sync,no_subtree_check,root_squash
 

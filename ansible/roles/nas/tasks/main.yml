@@ -58,3 +58,11 @@
   loop: "{{ clientes_baja }}"
   loop_control:
     label: "{{ item.nombre }}"
+
+- name: Borrar la carpeta temporal de Ansible de los clientes de baja
+  ansible.builtin.file:
+    path: "{{ clientes_tmp_dir }}/{{ item.nombre }}"
+    state: absent
+  loop: "{{ clientes_baja }}"
+  loop_control:
+    label: "{{ item.nombre }}"

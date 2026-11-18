@@ -35,6 +35,7 @@
     password: "{{ vault_secretos[item.nombre].db_password }}"
     host: "{{ ip_datos_web }}"
     priv: "{{ item.nombre }}.*:ALL"
+    column_case_sensitive: true
     state: present
     login_unix_socket: "{{ mysql_socket }}"
   loop: "{{ clientes_alta }}"
@@ -78,6 +79,7 @@
   community.mysql.mysql_user:
     name: "{{ item.nombre }}_user"
     host: "{{ ip_datos_web }}"
+    column_case_sensitive: true
     state: absent
     login_unix_socket: "{{ mysql_socket }}"
   loop: "{{ clientes_baja }}"
